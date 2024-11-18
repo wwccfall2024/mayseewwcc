@@ -1,0 +1,15 @@
+name: Check Week 7 Assignment
+on:
+  push:
+    branches:
+      - week7
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check Assignment
+        working-directory: ./week7
+        run: ./check

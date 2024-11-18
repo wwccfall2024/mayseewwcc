@@ -1,0 +1,283 @@
+checks:
+- name: Using Destruction Schema
+  sql: USE destruction
+
+- name: Initialize "The Fellowship of the Ring" As The Winners
+  sql: |
+    CALL set_winners(3)
+
+- name: Verify "The Fellowship of the Ring" Are The Starting Winners
+  sql: |
+    SELECT character_id, name
+      FROM winners
+      ORDER BY character_id
+  resultSize: 2
+  result:
+    - ["8", "Daenerys Targaryen"]
+    - ["9", "Arya Stark"]
+    - ["10", "Frodo Baggins"]
+    - ["11", "Gandalf"]
+    - ["12", "Gollum"]
+
+- name: Check Frodo's Items
+  sql: |
+    SELECT character_name, item_name, armor, damage
+      FROM character_items
+      WHERE character_id=10
+  resultSize: 4
+  result:
+    - ["Frodo Baggins", "chainmail", "3", "0"]
+    - ["Frodo Baggins", "dagger", "0", "8"]
+    - ["Frodo Baggins", "helmet", "1", "0"]
+
+- name: Check Jon Snow's Items
+  sql: |
+    SELECT character_name, item_name, armor, damage
+      FROM character_items
+      WHERE character_id=7
+  resultSize: 4
+  result:
+    - ["Jon Snow", "dagger", "0", "8"]
+    - ["Jon Snow", "helmet", "1", "0"]
+    - ["Jon Snow", "leather armor", "2", "0"]
+    - ["Jon Snow", "longbow", "0", "11"]
+    - ["Jon Snow", "sword", "1", "13"]
+
+- name: Frodo Checks Team Equipment
+  sql: |
+    SELECT team_name, item_name, armor, damage
+      FROM team_items
+      WHERE team_id = (SELECT team_id FROM team_members WHERE character_id = 10)
+      ORDER BY item_name
+  resultSize: 4
+  result:
+    - ["The Fellowship of the Ring", "chainmail", "3", "0"]
+    - ["The Fellowship of the Ring", "dagger", "0", "8"]
+    - ["The Fellowship of the Ring", "helmet", "1", "0"]
+    - ["The Fellowship of the Ring", "leather armor", "2", "0"]
+    - ["The Fellowship of the Ring", "longbow", "0", "11"]
+    - ["The Fellowship of the Ring", "shield", "2", "0"]
+    - ["The Fellowship of the Ring", "shortbow", "0", "9"]
+    - ["The Fellowship of the Ring", "sword", "1", "13"]
+
+- name: Check Frodo's Health
+  sql: |
+    SELECT c.name, cs.health, cs.armor
+      FROM characters c
+        INNER JOIN character_stats cs
+          ON c.character_id = cs.character_id
+      WHERE c.character_id = 10
+  resultSize: 3
+  result:
+    - ["Frodo Baggins", "14", "1"]
+
+- name: Check Jon Snow's Health
+  sql: |
+    SELECT c.name, cs.health, cs.armor
+      FROM characters c
+        INNER JOIN character_stats cs
+          ON c.character_id = cs.character_id
+      WHERE c.character_id = 7
+  resultSize: 3
+  result:
+    - ["Jon Snow", "15", "2"]
+
+- name: Check Frodo's Total Armor
+  sql: |
+    SELECT armor_total(10) AS armor;
+  resultSize: 1
+  result:
+  - ["1"]
+
+- name: Check Jon Snow's Total Armor
+  sql: |
+    SELECT armor_total(7) AS armor;
+  resultSize: 1
+  result:
+  - ["5"]
+
+- name: Jon Snow Attacks Frodo 
+  sql: |
+    CALL attack(10, 68)
+
+- name: Check Frodo's Health
+  sql: |
+    SELECT c.name, cs.health, cs.armor
+      FROM characters c
+        INNER JOIN character_stats cs
+          ON c.character_id = cs.character_id
+      WHERE c.character_id = 10
+  resultSize: 3
+  result:
+    - ["Frodo Baggins", "2", "1"]
+
+- name: Frodo Checks His Inventory
+  sql: |
+    SELECT it.name
+      FROM inventory inv
+        INNER JOIN items it
+          ON it.item_id = inv.item_id
+      WHERE inv.character_id = 10
+  resultSize: 1
+  result:
+    - ["helmet"]
+    - ["chainmail"]
+
+- name: Frodo Evaluates Equipped Items
+  sql: |
+    SELECT it.name
+      FROM equipped e
+        INNER JOIN items it
+          ON it.item_id = e.item_id
+      WHERE e.character_id = 10
+  resultSize: 1
+  result:
+    - ["dagger"]
+
+- name: Frodo Equips Chainmail
+  sql: |
+    CALL equip(101)
+
+- name: Frodo Checks His Inventory
+  sql: |
+    SELECT it.name
+      FROM inventory inv
+        INNER JOIN items it
+          ON it.item_id = inv.item_id
+      WHERE inv.character_id = 10
+  resultSize: 1
+  result:
+    - ["helmet"]
+
+- name: Frodo Evaluates Equipped Items
+  sql: |
+    SELECT it.name
+      FROM equipped e
+        INNER JOIN items it
+          ON it.item_id = e.item_id
+      WHERE e.character_id = 10
+  resultSize: 1
+  result:
+    - ["dagger"]
+    - ["chainmail"]
+
+- name: Frodo Attacks Jon Snow 
+  sql: |
+    CALL attack(7, 100)
+
+- name: Check Jon Snow's Health
+  sql: |
+    SELECT c.name, cs.health, cs.armor
+      FROM characters c
+        INNER JOIN character_stats cs
+          ON c.character_id = cs.character_id
+      WHERE c.character_id = 7
+  resultSize: 3
+  result:
+    - ["Jon Snow", "12", "2"]
+
+- name: Jon Snow Attacks Frodo 
+  sql: |
+    CALL attack(10, 68)
+
+- name: Verify Frodo Was Killed
+  sql: |
+    SELECT COUNT(character_id)
+      FROM characters
+      WHERE character_id = 10
+  resultSize: 1
+  result:
+    - ["0"]
+
+- name: Verify Frodo's Stats Were Removed
+  sql: |
+    SELECT COUNT(character_id)
+      FROM character_stats
+      WHERE character_id = 10
+  resultSize: 1
+  result:
+    - ["0"]
+
+- name: Verify Frodo Was Removed From "The Fellowship of the Ring"
+  sql: |
+    SELECT COUNT(team_member_id)
+      FROM team_members
+      WHERE character_id = 10
+  resultSize: 1
+  result:
+    - ["0"]
+
+- name: Verify Frodo Was Removed As A Prior Winner
+  sql: |
+    SELECT character_id, name
+      FROM winners
+      ORDER BY character_id
+  resultSize: 2
+  result:
+    - ["8", "Daenerys Targaryen"]
+    - ["9", "Arya Stark"]
+    - ["11", "Gandalf"]
+    - ["12", "Gollum"]
+
+- name: Verify Frodo's Inventory Was Lost
+  sql: |
+    SELECT COUNT(inventory_id)
+      FROM inventory
+      WHERE character_id = 10
+  resultSize: 1
+  result:
+    - ["0"]
+
+- name: Verify Frodo's Equipped Items Were Lost
+  sql: |
+    SELECT COUNT(equipped_id)
+      FROM equipped
+      WHERE character_id = 10
+  resultSize: 1
+  result:
+    - ["0"]
+
+- name: Jon Snow Unequips His Sword
+  sql: |
+    CALL unequip(68)
+
+- name: Jon Snow Checks His Inventory
+  sql: |
+    SELECT it.name
+      FROM inventory inv
+        INNER JOIN items it
+          ON it.item_id = inv.item_id
+      WHERE inv.character_id = 7
+  resultSize: 1
+  result:
+    - ["dagger"]
+    - ["helmet"]
+    - ["longbow"]
+    - ["sword"]
+
+- name: Jon Snow Evaluates Equipped Items
+  sql: |
+    SELECT it.name
+      FROM equipped e
+        INNER JOIN items it
+          ON it.item_id = e.item_id
+      WHERE e.character_id = 7
+  resultSize: 1
+  result:
+    - ["leather armor"]
+
+- name: Update "The Watchers" As The Winners
+  sql: |
+    CALL set_winners(1)
+
+- name: Verify "The Watchers" Are The Winners
+  sql: |
+    SELECT character_id, name
+      FROM winners
+      ORDER BY character_id
+  resultSize: 2
+  result:
+    - ["1", "Death"]
+    - ["2", "Susan"]
+    - ["3", "Rincewind"]
+    - ["7", "Jon Snow"]
