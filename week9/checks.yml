@@ -1,0 +1,157 @@
+checks:
+- name: Using Social Schema
+  sql: USE social
+
+- name: Is everyone logged in?
+  sql: |
+    SELECT session_id, user_id FROM sessions;
+  resultSize: 2
+  result:
+    - ["1", "1"]
+    - ["2", "2"]
+    - ["3", "3"]
+    - ["4", "4"]
+    - ["5", "5"]
+
+- name: Get Tahani's Notifications
+  sql: |
+    SELECT first_name, last_name, post_id, content
+    FROM notification_posts
+    WHERE user_id=3
+  resultSize: 4
+  result:
+    - ["Jason", "Mendoza", "4", "Jason Mendoza just joined!"]
+    - ["Michael", "Schur", "5", "Michael Schur just joined!"]
+    - ["Chidi", "Anagonye", "6", "I am Chidi Anagonye, and I am a philosopher."]
+    - ["Eleanor", "Shellstrop", "7", "I am Eleanor Shellstrop, and I am a lawyer."]
+    - ["Jason", "Mendoza", "9", "I am Jason Mendoza, and I am a janitor."]
+
+- name: Add Larry Hemsworth
+  sql: |
+    INSERT INTO users
+      (user_id, first_name, last_name, email)
+    VALUES
+      (6, 'Larry', 'Hemsworth', 'larry@earth.com')
+
+- name: Larry Friends Tahani
+  sql: |
+    INSERT INTO friends
+      (user_id, friend_id)
+    VALUES
+      (6, 3)
+
+- name: Tahani Friends Larry
+  sql: |
+    INSERT INTO friends
+      (user_id, friend_id)
+    VALUES
+      (3, 6)
+
+- name: Larry Creates Post
+  sql: |
+    CALL add_post(6, "I'm dull as a rock. Ugh, even that analogy was boring.")
+
+- name: Chidi Creates Post
+  sql: |
+    CALL add_post(1, "I've narrowed it down to two possibilities: Yes and No.")
+
+- name: Tahani Checks Her Notifications
+  sql: |
+    SELECT first_name, last_name, post_id, content
+      FROM notification_posts
+      WHERE user_id = 3
+  resultSize: 4
+  result:
+    - ["Jason", "Mendoza", "4", "Jason Mendoza just joined!"]
+    - ["Michael", "Schur", "5", "Michael Schur just joined!"]
+    - ["Chidi", "Anagonye", "6", "I am Chidi Anagonye, and I am a philosopher."]
+    - ["Eleanor", "Shellstrop", "7", "I am Eleanor Shellstrop, and I am a lawyer."]
+    - ["Jason", "Mendoza", "9", "I am Jason Mendoza, and I am a janitor."]
+    - ["Larry", "Hemsworth", "11", "Larry Hemsworth just joined!"]
+    - ["Larry", "Hemsworth", "12", "I'm dull as a rock. Ugh, even that analogy was boring."]
+    - ["Chidi", "Anagonye", "13", "I've narrowed it down to two possibilities: Yes and No."]
+
+- name: Larry Checks His Notifications
+  sql: |
+    SELECT first_name, last_name, post_id, content
+      FROM notification_posts
+      WHERE user_id = 6
+  resultSize: 4
+  result: []
+
+- name: Jason Checks His Notifications
+  sql: |
+    SELECT first_name, last_name, post_id, content
+      FROM notification_posts
+      WHERE user_id = 4
+  resultSize: 4
+  result:
+    - ["Michael", "Schur", "5", "Michael Schur just joined!"]
+    - ["Eleanor", "Shellstrop", "7", "I am Eleanor Shellstrop, and I am a lawyer."]
+    - ["Tahani", "Al-Jamil", "8", "I am Tahani Al-Jamil, and I am a socialite."]
+    - ["Michael", "Schur", "10", "I am Michael Schur, and I am a creator."]
+    - ["Larry", "Hemsworth", "11", "Larry Hemsworth just joined!"]
+
+- name: Chidi Changes His Mind and Deletes His Post
+  sql: |
+    DELETE FROM posts WHERE post_id = 13
+
+- name: Tahani Compulsively Checks Her Notifications
+  sql: |
+    SELECT first_name, last_name, post_id, content
+      FROM notification_posts
+      WHERE user_id = 3
+  resultSize: 4
+  result:
+    - ["Jason", "Mendoza", "4", "Jason Mendoza just joined!"]
+    - ["Michael", "Schur", "5", "Michael Schur just joined!"]
+    - ["Chidi", "Anagonye", "6", "I am Chidi Anagonye, and I am a philosopher."]
+    - ["Eleanor", "Shellstrop", "7", "I am Eleanor Shellstrop, and I am a lawyer."]
+    - ["Jason", "Mendoza", "9", "I am Jason Mendoza, and I am a janitor."]
+    - ["Larry", "Hemsworth", "11", "Larry Hemsworth just joined!"]
+    - ["Larry", "Hemsworth", "12", "I'm dull as a rock. Ugh, even that analogy was boring."]
+
+- name: Time Passes
+  sleep: 15
+
+- name: Who is logged in?
+  sql: |
+    SELECT session_id, user_id FROM sessions;
+  resultSize: 2
+  result:
+    - ["1", "1"]
+    - ["2", "2"]
+    - ["4", "4"]
+
+- name: Jason Impulsively Deletes His Account
+  sql: |
+    DELETE FROM users WHERE user_id=4
+
+- name: Tahani Compulsively Checks Her Notifications Again
+  sql: |
+    SELECT first_name, last_name, post_id, content
+      FROM notification_posts
+      WHERE user_id = 3
+  resultSize: 4
+  result:
+    - ["Michael", "Schur", "5", "Michael Schur just joined!"]
+    - ["Chidi", "Anagonye", "6", "I am Chidi Anagonye, and I am a philosopher."]
+    - ["Eleanor", "Shellstrop", "7", "I am Eleanor Shellstrop, and I am a lawyer."]
+    - ["Larry", "Hemsworth", "11", "Larry Hemsworth just joined!"]
+    - ["Larry", "Hemsworth", "12", "I'm dull as a rock. Ugh, even that analogy was boring."]
+
+- name: Who is logged in?
+  sql: |
+    SELECT session_id, user_id FROM sessions;
+  resultSize: 2
+  result:
+    - ["1", "1"]
+    - ["2", "2"]
+
+- name: Verify Jason's Friends
+  sql: |
+    SELECT user_id
+      FROM friends
+      WHERE user_id = 4 OR friend_id = 4
+  resultSize: 1
+  result: []
